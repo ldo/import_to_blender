@@ -18,6 +18,10 @@
 # loaded by Blender, but is otherwise ignored; it is only required
 # because the -b option has to have an argument.
 #
+# NOTE: this script relies on a function not currently present in the
+# mainline Blender Python API. See the patch attached here:
+# <http://projects.blender.org/tracker/?func=detail&atid=127&aid=33157&group_id=9>
+#
 # Written by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
 
