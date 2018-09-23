@@ -11,8 +11,9 @@
 #
 # Alternatively, the input file can be a .zip file, as downloaded from
 # the Google/Trimble 3D Warehouse. In this case, the .dae file is
-# found within the models subdirectory in the zip archive, which will
-# be automatically extracted to a temporary location for importing.
+# found either at the top level or within the models subdirectory in
+# the zip archive, which will be automatically extracted to a
+# temporary location for importing.
 #
 # Written by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
@@ -62,7 +63,7 @@ if infile.endswith(".zip") :
     subprocess.check_call(args = ("unzip", infile, "-d", tmpdir))
     modelsdir = os.path.join(tmpdir, "models")
     if not os.path.isdir(modelsdir) :
-        raise RuntimeError("no models subdir present in %s" % infile)
+        modelsdir = tmpdir
     #end if
     use_infile = None
     for item in os.listdir(modelsdir) :
