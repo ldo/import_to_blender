@@ -2,7 +2,7 @@
 # This script is meant to be run from within Blender 2.64, via
 # a command line like
 #
-#     blender -b dummy.blend -P batch_collada_import.py -- infile.dae outfile.blend
+#     blender -b -P batch_collada_import.py -- infile.dae outfile.blend
 #
 # where infile.dae is the name of the Collada file to import, and
 # outfile.blend is the name to give the output .blend file. Note the
@@ -13,14 +13,6 @@
 # the Google/Trimble 3D Warehouse. In this case, the .dae file is
 # found within the models subdirectory in the zip archive, which will
 # be automatically extracted to a temporary location for importing.
-#
-# The dummy.blend file must be a valid .blend file, and is initially
-# loaded by Blender, but is otherwise ignored; it is only required
-# because the -b option has to have an argument.
-#
-# NOTE: this script relies on a function not currently present in the
-# mainline Blender Python API. See the patch attached here:
-# <http://projects.blender.org/tracker/?func=detail&atid=127&aid=33157&group_id=9>
 #
 # Written by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
@@ -120,15 +112,8 @@ else :
     raise getopt.GetoptError("input filename must end with .dae or .zip")
 #end if
 
-if not hasattr(bpy.utils, "collada_import") :
-    raise RuntimeError("Your version of Blender does not include the necessary bpy.utils.collada_import routine")
-#end if
-
 bpy.ops.wm.read_homefile()
-#bpy.ops.wm.collada_import(filepath = use_infile)
-  # WON'T WORK: fails with “RuntimeError: Operator bpy.ops.wm.collada_import.poll() failed, context is incorrect” on this line
-bpy.utils.collada_import(use_infile)
-  # requires my custom Blender patch to add this API routine
+bpy.ops.wm.collada_import(filepath = use_infile)
 if rescale != None :
     # bpy.ops.transform.resize(value = (rescale, rescale, rescale))
         # WON'T WORK: will fail with “RuntimeError: Operator bpy.ops.transform.resize.poll() failed, context is incorrect”
