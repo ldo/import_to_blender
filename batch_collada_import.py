@@ -75,10 +75,10 @@ if infile.endswith(".zip") :
                 use_infile = modelfile
             #end if
         #end if
-        if use_infile == None :
-            raise RuntimeError("no models/*.dae file found in in %s" % infile)
-        #end if
     #end for
+    if use_infile == None :
+        raise RuntimeError("no .dae file found in in %s" % infile)
+    #end if
 elif infile.endswith(".dae") :
     use_infile = infile
 else :
