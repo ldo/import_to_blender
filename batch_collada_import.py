@@ -21,36 +21,9 @@ import bpy
 import sys
 import os
 import subprocess
+import shutil
 import tempfile
 import getopt
-
-#+
-# Miscellaneous useful stuff
-#-
-
-def delete_dir(dir) :
-    """deletes dir and all its contents."""
-    if os.path.isdir(dir) :
-        for parent, dirs, files in os.walk(dir, topdown = False) :
-            for item in files :
-                os.remove(os.path.join(parent, item))
-            #end for
-            for item in dirs :
-                item = os.path.join(parent, item)
-                (os.rmdir, os.remove)[os.path.islink(item)](item)
-            #end for
-        #end for
-        os.rmdir(dir)
-    #end if
-#end delete_dir
-
-def runcmd(args) :
-    """runs a command and checks its return status."""
-    status = subprocess.Popen(args = args).wait()
-    if status != 0 :
-        raise RuntimeError("status %s from cmd %s" % (status, repr(args)))
-    #end if
-#end runcmd
 
 #+
 # Mainline
@@ -86,7 +59,7 @@ if not outfile.endswith(".blend") :
 #end if
 if infile.endswith(".zip") :
     tmpdir = tempfile.mkdtemp(prefix = "blenddae")
-    runcmd(args = ("unzip", infile, "-d", tmpdir))
+    subprocess.check_call(args = ("unzip", infile, "-d", tmpdir))
     modelsdir = os.path.join(tmpdir, "models")
     if not os.path.isdir(modelsdir) :
         raise RuntimeError("no models subdir present in %s" % infile)
@@ -124,5 +97,5 @@ for image in bpy.data.images :
 #end for
 bpy.ops.wm.save_as_mainfile(filepath = outfile)
 if tmpdir != None :
-    delete_dir(tmpdir)
+    shutil.rmtree(tmpdir)
 #end if
