@@ -16,6 +16,9 @@
 #          specifies what to do if the output .blend file already exists:
 #            error       -- signal an error and abort the conversion
 #            overwrite   -- overwrite the output .blend file
+#    --scale=«scalefactor»
+#          specifies an optional factor by which to scale the imported
+#          model.
 #
 # External program needed: unzip.
 #
