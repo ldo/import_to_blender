@@ -149,6 +149,10 @@ else :
 #end if
 
 bpy.ops.wm.read_homefile()
+objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
+for obj in objs :
+    bpy.data.objects.remove(obj)
+#end for
 bpy.ops.wm.collada_import(filepath = use_infile)
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
