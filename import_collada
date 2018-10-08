@@ -14,7 +14,7 @@
 #          searching for the name “blender” in your PATH.
 #    --existing=error|overwrite
 #          specifies what to do if the output .blend file already exists:
-#            error       -- signal an error and abort the conversion
+#            error       -- signal an error and abort the conversion (default)
 #            overwrite   -- overwrite the output .blend file
 #    --scale=«scalefactor»
 #          specifies an optional factor by which to scale the imported
