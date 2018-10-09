@@ -19,6 +19,8 @@
 #    --scale=«scalefactor»
 #          specifies an optional factor by which to scale the imported
 #          model.
+#    --template=«template-name»
+#          specifies the startup template to load before doing the import.
 #
 # External program needed: unzip.
 #
@@ -35,6 +37,7 @@ opterror()
 blender=blender
 existing=error
 scale=
+template=
 
 for ((;;)); do
     if [ "${1:0:2}" != "--" ]; then
@@ -57,6 +60,8 @@ for ((;;)); do
         existing="$val"
     elif [ "$opt" = "scale" ]; then
         scale="$val"
+    elif [ "$opt" = "template" ]; then
+        template="$val"
     else
         opterror "bad option $opt"
     fi
@@ -74,6 +79,7 @@ export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
 export IMPORT_scale="$scale"
+export IMPORT_template="$template"
 
 exec "$blender" -noaudio -b -P <(cat <<'EOD'
 import sys
@@ -114,6 +120,21 @@ if scale_factor != "" :
 else :
     scale_factor = None
 #end if
+template = os.getenv("IMPORT_template", "")
+if template != "" :
+    valid_templates = set()
+    for dir in bpy.utils.app_template_paths() :
+        valid_templates |= set(os.listdir(dir))
+    #end for
+    if template not in valid_templates :
+        raise getopt.GetoptError \
+          (
+                "invalid template %s not found among those currently installed: %s"
+            %
+                (repr(template), repr(sorted(valid_templates)))
+          )
+    #end if
+#end if
 if not outfile.endswith(".blend") :
     raise getopt.GetoptError("output file name must end with .blend")
 #end if
@@ -151,7 +172,7 @@ else :
     raise getopt.GetoptError("input filename must end with .dae or .zip")
 #end if
 
-bpy.ops.wm.read_homefile()
+bpy.ops.wm.read_homefile(app_template = template)
 objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
 for obj in objs :
     bpy.data.objects.remove(obj)
