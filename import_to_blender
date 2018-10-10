@@ -1,11 +1,11 @@
 #!/bin/bash
 #+
-# This script invokes Blender to import a Collada document into a
-# new .blend file. Invoke it as follows:
+# This script invokes Blender to import a 3D model in a supported
+# format into a new .blend file. Invoke it as follows:
 #
-#     import_collada [«options»...] «input_collada_file» «output_blend_file»
+#     import_to_blender [«options»...] «input_file» «output_blend_file»
 #
-# where «input_collada_file» is the name of the file to import, and
+# where «input_file» is the name of the file to import, and
 # «output_blend_file» is the name to give the output .blend file.
 #
 # Valid options are
@@ -70,7 +70,7 @@ if [ -z "$(type -p "$blender")" ]; then
     opterror "no such executable “$blender”"
 fi
 if [ $# != 2 ]; then
-    opterror $'Usage:\n\t'"$0 "'«input_collada_file» «output_blend_file»'
+    opterror $'Usage:\n\t'"$0 "'«input_to_blender» «output_blend_file»'
 fi
 
 # pass parameters to Python script in environment variables to avoid
@@ -96,6 +96,30 @@ except ChildProcessError :
     # can happen intermittently?
     pass
 #end try
+
+importers = \
+    {
+        ".3ds" : bpy.ops.import_scene.autodesk_3ds,
+        ".abc" : bpy.ops.wm.alembic_import,
+        ".dae" : bpy.ops.wm.collada_import,
+        ".fbx" : bpy.ops.import_scene.fbx,
+        ".obj" : bpy.ops.import_scene.obj,
+        ".ply" : bpy.ops.import_mesh.ply,
+        ".stl" : bpy.ops.import_mesh.stl,
+        ".x3d" : bpy.ops.import_scene.x3d,
+    }
+
+def getext(path) :
+    "extracts the part of path from the last dot to the end."
+    extpos = path.rfind(".")
+    if extpos >= 0 :
+        ext = path[extpos:].lower()
+    else :
+        ext = ""
+    #end if
+    return \
+        ext
+#end getext
 
 #+
 # Mainline
@@ -145,31 +169,43 @@ if existing_action != "overwrite" and os.path.exists(outfile) :
 tmpdir = None
 
 if infile.endswith(".zip") :
-    tmpdir = tempfile.mkdtemp(prefix = "blenddae")
+    tmpdir = tempfile.mkdtemp(prefix = "blender_import")
     subprocess.check_call(args = ("unzip", infile, "-d", tmpdir))
     modelsdir = os.path.join(tmpdir, "models")
     if not os.path.isdir(modelsdir) :
         modelsdir = tmpdir
     #end if
     use_infile = None
+    importer = None
     for item in os.listdir(modelsdir) :
-        if item.endswith(".dae") :
+        inext = getext(item)
+        if inext in importers :
             modelfile = os.path.join(modelsdir, item)
             if os.path.isfile(modelfile) :
                 if use_infile != None :
-                    raise RuntimeError("multiple .dae files present in %s" % infile)
+                    raise RuntimeError \
+                      (
+                            "multiple importable files present in %s: %s, %s"
+                        %
+                            (repr(infile), repr(use_infile), repr(modelfile))
+                      )
                 #end if
                 use_infile = modelfile
+                importer = importers[inext]
             #end if
         #end if
     #end for
     if use_infile == None :
-        raise RuntimeError("no .dae file found in in %s" % infile)
+        raise RuntimeError("no importable file found in in %s" % repr(infile))
     #end if
-elif infile.endswith(".dae") :
-    use_infile = infile
 else :
-    raise getopt.GetoptError("input filename must end with .dae or .zip")
+    inext = getext(infile)
+    if inext in importers :
+        importer = importers[inext]
+        use_infile = infile
+    else :
+        raise getopt.GetoptError("input filename %s extension is not recognized" % infile)
+    #end if
 #end if
 
 bpy.ops.wm.read_homefile(app_template = template)
@@ -177,7 +213,7 @@ objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
 for obj in objs :
     bpy.data.objects.remove(obj)
 #end for
-bpy.ops.wm.collada_import(filepath = use_infile)
+importer(filepath = use_infile)
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
 #end if
