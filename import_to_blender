@@ -12,7 +12,6 @@
 #    --arg=«keyword»=«value»
 #          specifies an additional keyword argument for the import operator.
 #          May be specified multiple times with different keywords.
-#          Argument values should not have newlines in them.
 #    --blender=«blender»
 #          specifies the path to the Blender executable. Defaults to
 #          searching for the name “blender” in your PATH.
@@ -49,6 +48,7 @@ opterror()
 
 blender=blender
 existing=error
+nr_args=0
 args=
 scale=
 template=
@@ -68,11 +68,8 @@ for ((;;)); do
     val="${opt#*=}"
     opt="${opt%%=*}"
     if [ "$opt" = "arg" ]; then
-        if [ -n "$args" ]; then
-            args="$args"$'\n'"$val"
-        else
-            args="$val"
-        fi
+        nr_args=$((nr_args + 1))
+        export IMPORT_arg_${nr_args}="$val"
     elif [ "$opt" = "blender" ]; then
         blender="$val"
     elif [ "$opt" = "existing" ]; then
@@ -112,7 +109,9 @@ fi
 export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
-export IMPORT_args="$args"
+if [ $nr_args -ne 0 ]; then
+    unset IMPORT_arg_$((nr_args + 1)) # just in case
+fi
 export IMPORT_scale="$scale"
 export IMPORT_template="$template"
 export IMPORT_postexec="$postexec"
@@ -328,7 +327,15 @@ infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 scale_factor = os.getenv("IMPORT_scale", "")
-importer_args_str = os.getenv("IMPORT_args", "")
+importer_args_strs = []
+i = 0
+while True :
+    i += 1
+    arg = os.getenv("IMPORT_arg_%d" % i)
+    if arg == None :
+        break
+    importer_args_strs.append(arg)
+#end while
 
 postexec = os.getenv("IMPORT_postexec", "")
 preexec = os.getenv("IMPORT_preexec", "")
@@ -415,39 +422,37 @@ else :
 
 importer_arg_defs = dict((item[0], item[1]) for item in importer["args"])
 importer_args = {}
-if importer_args_str != "" :
-    for arg in importer_args_str.split("\n") :
-        value = arg.split("=", 1)
-        if len(value) != 2 :
-            raise getopt.GetoptError("bad import arg %s" % repr(arg))
-        #end if
-        keyword, value = value
-        if keyword not in importer_arg_defs :
-            raise getopt.GetoptError \
-              (
-                    "unrecognized arg keyword %s for %s importer"
-                %
-                    (repr(keyword), importer["name"])
-              )
-        #end if
-        if keyword in importer_args :
-            raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
-        #end if
-        conv = importer_arg_defs[keyword]
-        fail = None
-        try :
-            importer_args[keyword] = conv(value)
-        except (TypeError, ValueError) as why :
-            fail = getopt.GetoptError \
-              (
-                "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
-              )
-        #end try
-        if fail != None :
-            raise fail
-        #end if
-    #end for
-#end if
+for arg in importer_args_strs :
+    value = arg.split("=", 1)
+    if len(value) != 2 :
+        raise getopt.GetoptError("bad import arg %s" % repr(arg))
+    #end if
+    keyword, value = value
+    if keyword not in importer_arg_defs :
+        raise getopt.GetoptError \
+          (
+                "unrecognized arg keyword %s for %s importer"
+            %
+                (repr(keyword), importer["name"])
+          )
+    #end if
+    if keyword in importer_args :
+        raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
+    #end if
+    conv = importer_arg_defs[keyword]
+    fail = None
+    try :
+        importer_args[keyword] = conv(value)
+    except (TypeError, ValueError) as why :
+        fail = getopt.GetoptError \
+          (
+            "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
+          )
+    #end try
+    if fail != None :
+        raise fail
+    #end if
+#end for
 
 bpy.ops.wm.read_homefile(app_template = template)
 objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
