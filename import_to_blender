@@ -134,16 +134,188 @@ except ChildProcessError :
     pass
 #end try
 
+def valid_axis(arg) :
+    if arg not in {"X", "Y", "Z", "-X", "-Y", "-Z"} :
+        raise TypeError("not a valid axis: %s" % repr(arg))
+    #end if
+    return \
+        arg
+#end valid_axis
+
+def limit_int(minval, maxval) :
+
+    maxval_str = (lambda : "∞", lambda : "%d" % maxval)[maxval != None]()
+
+    def validate(arg) :
+        arg = int(arg)
+        if arg < minval or maxval != None and arg > maxval :
+            raise TypeError("arg %d out of range [%d, %s]" % (arg, minval, maxval_str))
+        #end if
+        return \
+            arg
+    #end validate
+
+#begin limit_int
+    validate.__name__ = "limit_int(%d, %s)" % (minval, maxval_str)
+    return \
+        validate
+#end limit_int
+
+def limit_float(minval, maxval) :
+
+    def validate(arg) :
+        arg = float(arg)
+        if arg < minval or arg > maxval :
+            raise TypeError("arg %.3g out of range [%.3g, %.3g]" % (arg, minval, maxval))
+        #end if
+        return \
+            arg
+    #end validate
+
+#begin limit_float
+    validate.__name__ = "limit_float(%.3g, %.3g)" % (minval, maxval)
+    return \
+        validate
+#end limit_float
+
+def limit_enum(vals) :
+
+    def validate(arg) :
+        if arg not in vals :
+            raise TypeError("value %s not in %s" % (repr(arg), repr(sorted(vals))))
+        #end if
+        return \
+            arg
+    #end validate
+
+#begin limit_enum
+    validate.__name__ = "limit_enum(%s)" % repr(sorted(vals))
+    return \
+        validate
+#end limit_enum
+
 importers = \
     {
-        ".3ds" : bpy.ops.import_scene.autodesk_3ds,
-        ".abc" : bpy.ops.wm.alembic_import,
-        ".dae" : bpy.ops.wm.collada_import,
-        ".fbx" : bpy.ops.import_scene.fbx,
-        ".obj" : bpy.ops.import_scene.obj,
-        ".ply" : bpy.ops.import_mesh.ply,
-        ".stl" : bpy.ops.import_mesh.stl,
-        ".x3d" : bpy.ops.import_scene.x3d,
+        ".3ds" :
+            {
+                "name" : "3DS",
+                "op" : bpy.ops.import_scene.autodesk_3ds,
+                "args" :
+                    [
+                        ("axis_forward", valid_axis),
+                        ("axis_up", valid_axis),
+                        ("constrain_size", limit_float(0, 1000)),
+                        ("use_image_search", bool),
+                        ("use_apply_transform", bool),
+                    ],
+            },
+        ".abc" :
+            {
+                "name" : "Alembic",
+                 "op" : bpy.ops.wm.alembic_import,
+                "args" :
+                    [
+                        ("scale", limit_float(0.0001, 1000)),
+                        ("set_frame_range", bool),
+                        ("validate_meshes", bool),
+                        ("is_sequence", bool),
+                    ],
+            },
+        ".dae" :
+            {
+                "name" : "Collada",
+                "op" : bpy.ops.wm.collada_import,
+                "args" :
+                    [
+                        ("import_units", bool),
+                        ("fix_orientation", bool),
+                        ("find_chains", bool),
+                        ("auto_connect", bool),
+                        ("min_chain_length", limit_int(0, None)),
+                        ("keep_bind_info", bool),
+                    ],
+            },
+        ".fbx" :
+            {
+                "name" : "FBX",
+                "op" : bpy.ops.import_scene.fbx,
+                "args" :
+                    [
+                        ("axis_forward", valid_axis),
+                        ("axis_up", valid_axis),
+                        ("directory", str),
+                        ("use_manual_orientation", bool),
+                        ("global_scale", limit_float(0.001, 1000)),
+                        ("bake_space_transform", bool),
+                        ("use_custom_normals", bool),
+                        ("use_image_search", bool),
+                        ("use_alpha_decals", bool),
+                        ("decal_offset", limit_float(0, 1)),
+                        ("use_anim", bool),
+                        ("anim_offset", float),
+                        ("use_custom_props", bool),
+                        ("use_custom_props_enum_as_string", bool),
+                        ("ignore_leaf_bones", bool),
+                        ("force_connect_children", bool),
+                        ("automatic_bone_orientation", bool),
+                        ("primary_bone_axis", valid_axis),
+                        ("secondary_bone_axis", valid_axis),
+                        ("use_prepost_rot", bool),
+                    ],
+            },
+        ".obj" :
+            {
+                "name" : "OBJ",
+                "op" : bpy.ops.import_scene.obj,
+                "args" :
+                    [
+                        ("axis_forward", valid_axis),
+                        ("axis_up", valid_axis),
+                        ("use_edges", bool),
+                        ("use_smooth_groups", bool),
+                        ("use_split_objects", bool),
+                        ("use_split_groups", bool),
+                        ("use_groups_as_vgroups", bool),
+                        ("use_image_search", bool),
+                        ("split_mode", limit_enum({"OFF", "ON"})),
+                        ("global_clamp_size", limit_float(0, 1000)),
+                    ],
+            },
+        ".ply" :
+            {
+                "name" : "PLY",
+                "op" : bpy.ops.import_mesh.ply,
+                "args" :
+                    [
+                        ("directory", str),
+                        # ("files", ?),
+                    ],
+            },
+        ".stl" :
+            {
+                "name" : "STL",
+                "op" : bpy.ops.import_mesh.stl,
+                "args" :
+                    [
+                        ("axis_forward", valid_axis),
+                        ("axis_up", valid_axis),
+                        # ("files", ?),
+                        ("directory", str),
+                        ("global_scale", limit_float(1e-6, 1e6)),
+                        ("use_scene_unit", bool),
+                        ("use_facet_normal", bool),
+                    ],
+            },
+        ".x3d" :
+            {
+                "name" : "X3D",
+                "op" : bpy.ops.import_scene.x3d,
+                "args" :
+                    [
+                        ("axis_forward", valid_axis),
+                        ("axis_up", valid_axis),
+                    ],
+            },
     }
 
 def getext(path) :
@@ -167,23 +339,6 @@ outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 scale_factor = os.getenv("IMPORT_scale", "")
 importer_args_str = os.getenv("IMPORT_args", "")
-importer_args = {}
-if importer_args_str != "" :
-    for arg in importer_args_str.split("\n") :
-        value = arg.split("=", 1)
-        if len(value) != 2 :
-            raise getopt.GetoptError("bad import arg %s" % repr(arg))
-        #end if
-        keyword, value = value
-        if keyword in ("filepath", "filter_glob") :
-            raise getopt.GetoptError("attempt to specify reserved arg keyword %s" % repr(keyword))
-        #end if
-        if keyword in importer_args :
-            raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
-        #end if
-        importer_args[keyword] = value
-    #end for
-#end if
 
 postexec = os.getenv("IMPORT_postexec", "")
 preexec = os.getenv("IMPORT_preexec", "")
@@ -266,6 +421,42 @@ else :
     #end if
 #end if
 
+importer_arg_defs = dict((item[0], item[1]) for item in importer["args"])
+importer_args = {}
+if importer_args_str != "" :
+    for arg in importer_args_str.split("\n") :
+        value = arg.split("=", 1)
+        if len(value) != 2 :
+            raise getopt.GetoptError("bad import arg %s" % repr(arg))
+        #end if
+        keyword, value = value
+        if keyword not in importer_arg_defs :
+            raise getopt.GetoptError \
+              (
+                    "unrecognized arg keyword %s for %s importer"
+                %
+                    (repr(keyword), importer["name"])
+              )
+        #end if
+        if keyword in importer_args :
+            raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
+        #end if
+        conv = importer_arg_defs[keyword]
+        fail = None
+        try :
+            importer_args[keyword] = conv(value)
+        except TypeError as why :
+            fail = getopt.GetoptError \
+              (
+                "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
+              )
+        #end try
+        if fail != None :
+            raise fail
+        #end if
+    #end for
+#end if
+
 bpy.ops.wm.read_homefile(app_template = template)
 objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
 for obj in objs :
@@ -274,7 +465,7 @@ for obj in objs :
 if preexec != "" :
     exec(preexec)
 #end if
-importer(filepath = use_infile, **importer_args)
+importer["op"](filepath = use_infile, **importer_args)
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
 #end if
