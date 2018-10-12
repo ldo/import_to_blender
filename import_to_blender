@@ -318,17 +318,7 @@ importers = \
             },
     }
 
-def getext(path) :
-    "extracts the part of path from the last dot to the end."
-    extpos = path.rfind(".")
-    if extpos >= 0 :
-        ext = path[extpos:].lower()
-    else :
-        ext = ""
-    #end if
-    return \
-        ext
-#end getext
+getext = lambda item : os.path.splitext(item)[1].lower()
 
 #+
 # Mainline
