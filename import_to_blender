@@ -362,7 +362,9 @@ if template != "" :
           )
     #end if
 #end if
-if not outfile.endswith(".blend") :
+if os.path.isdir(outfile) :
+    outfile = os.path.join(outfile, os.path.splitext(os.path.split(infile)[1])[0] + ".blend")
+elif not outfile.endswith(".blend") :
     raise getopt.GetoptError("output file name must end with .blend")
 #end if
 if existing_action != "overwrite" and os.path.exists(outfile) :
