@@ -12,6 +12,7 @@
 #    --arg=«keyword»=«value»
 #          specifies an additional keyword argument for the import operator.
 #          May be specified multiple times with different keywords.
+#          Argument values should not have newlines in them.
 #    --blender=«blender»
 #          specifies the path to the Blender executable. Defaults to
 #          searching for the name “blender” in your PATH.
