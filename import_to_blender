@@ -445,7 +445,7 @@ if importer_args_str != "" :
         fail = None
         try :
             importer_args[keyword] = conv(value)
-        except TypeError as why :
+        except (TypeError, ValueError) as why :
             fail = getopt.GetoptError \
               (
                 "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
