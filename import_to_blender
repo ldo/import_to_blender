@@ -16,6 +16,15 @@
 #          specifies what to do if the output .blend file already exists:
 #            error       -- signal an error and abort the conversion (default)
 #            overwrite   -- overwrite the output .blend file
+#    --postexec=script
+#          executes the specified Python code after the import, just prior
+#          to saving the .blend file.
+#          May be specified multiple times; the values are concatenated
+#          in sequence, separated by newlines.
+#    --preexec=script
+#          executes the specified Python code prior to the import.
+#          May be specified multiple times; the values are concatenated
+#          in sequence, separated by newlines.
 #    --scale=«scalefactor»
 #          specifies an optional factor by which to scale the imported
 #          model.
@@ -38,6 +47,8 @@ blender=blender
 existing=error
 scale=
 template=
+postexec=
+preexec=
 
 for ((;;)); do
     if [ "${1:0:2}" != "--" ]; then
@@ -58,6 +69,18 @@ for ((;;)); do
             opterror "--existing value must be “error” or “overwrite”"
         fi
         existing="$val"
+    elif [ "$opt" = "postexec" ]; then
+        if [ -n "$postexec" ]; then
+            postexec="$postexec"$'\n'"$val"
+        else
+            postexec="$val"
+        fi
+    elif [ "$opt" = "preexec" ]; then
+        if [ -n "$preexec" ]; then
+            preexec="$preexec"$'\n'"$val"
+        else
+            preexec="$val"
+        fi
     elif [ "$opt" = "scale" ]; then
         scale="$val"
     elif [ "$opt" = "template" ]; then
@@ -80,6 +103,8 @@ export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
 export IMPORT_scale="$scale"
 export IMPORT_template="$template"
+export IMPORT_postexec="$postexec"
+export IMPORT_preexec="$preexec"
 
 exec "$blender" -noaudio -b -P <(cat <<'EOD'
 import sys
@@ -129,6 +154,8 @@ infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 scale_factor = os.getenv("IMPORT_scale", "")
+postexec = os.getenv("IMPORT_postexec", "")
+preexec = os.getenv("IMPORT_preexec", "")
 if scale_factor != "" :
     try :
         scale_factor = float(scale_factor)
@@ -213,6 +240,9 @@ objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
 for obj in objs :
     bpy.data.objects.remove(obj)
 #end for
+if preexec != "" :
+    exec(preexec)
+#end if
 importer(filepath = use_infile)
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
@@ -220,6 +250,9 @@ if scale_factor != None :
 for image in bpy.data.images :
     image.pack()
 #end for
+if postexec != "" :
+    exec(postexec)
+#end if
 bpy.ops.wm.save_as_mainfile(filepath = outfile)
 if tmpdir != None :
     shutil.rmtree(tmpdir)
