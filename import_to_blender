@@ -34,7 +34,7 @@
 #    --template=«template-name»
 #          specifies the startup template to load before doing the import.
 #
-# External program needed: unzip.
+# External program needed: unar.
 #
 # Copyright 2018 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under CC-BY-SA <http://creativecommons.org/licenses/by-sa/4.0/>.
@@ -380,9 +380,10 @@ if existing_action != "overwrite" and os.path.exists(outfile) :
 
 tmpdir = None
 
-if infile.endswith(".zip") :
+infilext = getext(infile)
+if infilext in (".zip", ".7z", ".rar") :
     tmpdir = tempfile.mkdtemp(prefix = "blender_import")
-    subprocess.check_call(args = ("unzip", infile, "-d", tmpdir))
+    subprocess.check_call(args = ("unar", "-D", infile, "-o", tmpdir))
     modelsdir = os.path.join(tmpdir, "models")
     if not os.path.isdir(modelsdir) :
         modelsdir = tmpdir
@@ -390,8 +391,8 @@ if infile.endswith(".zip") :
     use_infile = None
     importer = None
     for item in os.listdir(modelsdir) :
-        inext = getext(item)
-        if inext in importers :
+        infilext = getext(item)
+        if infilext in importers :
             modelfile = os.path.join(modelsdir, item)
             if os.path.isfile(modelfile) :
                 if use_infile != None :
@@ -403,7 +404,7 @@ if infile.endswith(".zip") :
                       )
                 #end if
                 use_infile = modelfile
-                importer = importers[inext]
+                importer = importers[infilext]
             #end if
         #end if
     #end for
@@ -411,9 +412,8 @@ if infile.endswith(".zip") :
         raise RuntimeError("no importable file found in in %s" % repr(infile))
     #end if
 else :
-    inext = getext(infile)
-    if inext in importers :
-        importer = importers[inext]
+    if infilext in importers :
+        importer = importers[infilext]
         use_infile = infile
     else :
         raise getopt.GetoptError("input filename %s extension is not recognized" % infile)
