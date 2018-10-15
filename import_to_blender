@@ -18,6 +18,7 @@
 #    --existing=error|overwrite
 #          specifies what to do if the output .blend file already exists:
 #            error       -- signal an error and abort the conversion (default)
+#            merge       -- merge the imported model into the existing file
 #            overwrite   -- overwrite the output .blend file
 #    --postexec=script
 #          executes the specified Python code after the import, just prior
@@ -73,8 +74,8 @@ for ((;;)); do
     elif [ "$opt" = "blender" ]; then
         blender="$val"
     elif [ "$opt" = "existing" ]; then
-        if [ "$val" != "error" -a "$val" != "overwrite" ]; then
-            opterror "--existing value must be “error” or “overwrite”"
+        if [ "$val" != "error" -a "$val" != "merge" -a "$val" != "overwrite" ]; then
+            opterror "--existing value must be “error”, “merge” or “overwrite”"
         fi
         existing="$val"
     elif [ "$opt" = "postexec" ]; then
@@ -348,16 +349,37 @@ is_archive_ext = \
   )
 
 def extract_archive(infile, outdir) :
-    subprocess.check_call(args = ("unar", "-D", infile, "-o", outdir))
-    for item in os.listdir(outdir) :
-        item = os.path.join(outdir, item)
-        if is_archive_ext(item) and os.path.isfile(item) :
-            subdir = os.path.join(outdir, os.path.splitext(item)[0])
-            os.mkdir(subdir)
-            extract_archive(item, subdir)
-            os.unlink(item)
-        #end if
-    #end for
+    importable = []
+
+    def do_extract(infile, outdir) :
+
+        def scan_dir(outdir) :
+            for item in os.listdir(outdir) :
+                item = os.path.join(outdir, item)
+                if os.path.isfile(item) :
+                    if is_archive_ext(item) :
+                        subdir = os.path.join(outdir, os.path.splitext(item)[0])
+                        os.mkdir(subdir)
+                        do_extract(item, subdir)
+                        os.unlink(item)
+                    elif getext(item) in importers :
+                        importable.append(item)
+                    #end if
+                elif os.path.isdir(item) :
+                    scan_dir(item)
+                #end if
+            #end for
+        #end scan_dir
+
+    #begin do_extract
+        subprocess.check_call(args = ("unar", "-D", infile, "-o", outdir))
+        scan_dir(outdir)
+    #end do_extract
+
+#begin extract_archive
+    do_extract(infile, outdir)
+    return \
+        importable
 #end extract_archive
 
 #+
@@ -415,7 +437,7 @@ if os.path.isdir(outfile) :
 elif not outfile.endswith(".blend") :
     raise getopt.GetoptError("output file name must end with .blend")
 #end if
-if existing_action != "overwrite" and os.path.exists(outfile) :
+if existing_action == "error" and os.path.exists(outfile) :
     raise getopt.GetoptError("output %s already exists" % repr(outfile))
 #end if
 
@@ -423,32 +445,18 @@ tmpdir = None
 
 if is_archive_ext(infile) :
     tmpdir = tempfile.mkdtemp(prefix = "blender_import")
-    extract_archive(infile, tmpdir)
-    modelsdir = os.path.join(tmpdir, "models")
-    if not os.path.isdir(modelsdir) :
-        modelsdir = tmpdir
-    #end if
-    use_infile = None
-    importer = None
-    for item in os.listdir(modelsdir) :
-        infilext = getext(item)
-        if infilext in importers :
-            modelfile = os.path.join(modelsdir, item)
-            if os.path.isfile(modelfile) :
-                if use_infile != None :
-                    raise RuntimeError \
-                      (
-                            "multiple importable files present in %s: %s, %s"
-                        %
-                            (repr(infile), repr(use_infile), repr(modelfile))
-                      )
-                #end if
-                use_infile = modelfile
-                importer = importers[infilext]
-            #end if
-        #end if
-    #end for
-    if use_infile == None :
+    importable = extract_archive(infile, tmpdir)
+    if len(importable) == 1 :
+        use_infile = importable[0]
+        importer = importers[getext(use_infile)]
+    elif len(importable) > 1 :
+        raise RuntimeError \
+          (
+                "multiple importable files present in %s: %s"
+            %
+                (repr(infile), repr(importable))
+          )
+    else :
         raise RuntimeError("no importable file found in in %s" % repr(infile))
     #end if
 else :
@@ -495,10 +503,16 @@ for arg in importer_args_strs :
     #end if
 #end for
 
-bpy.ops.wm.read_homefile(app_template = template)
+if existing_action == "merge" and os.path.exists(outfile) :
+    bpy.ops.wm.open_mainfile(filepath = outfile)
+else :
+    bpy.ops.wm.read_homefile(app_template = template)
+#end if
 objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
-for obj in objs :
-    bpy.data.objects.remove(obj)
+if existing_action != "merge" :
+    for obj in objs :
+        bpy.data.objects.remove(obj)
+    #end for
 #end for
 if preexec != "" :
     exec(preexec)
@@ -508,7 +522,11 @@ if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
 #end if
 for image in bpy.data.images :
-    image.pack()
+    try :
+        image.pack()
+    except RuntimeError as fail :
+        sys.stderr.write("%s\n" % str(fail))
+    #end try
 #end for
 if postexec != "" :
     exec(postexec)
