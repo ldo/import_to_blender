@@ -381,7 +381,7 @@ if existing_action != "overwrite" and os.path.exists(outfile) :
 tmpdir = None
 
 infilext = getext(infile)
-if infilext in (".zip", ".7z", ".rar") :
+if infilext in (".zip", ".7z", ".rar", ".tar", ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".tbz2", ".xz") :
     tmpdir = tempfile.mkdtemp(prefix = "blender_import")
     subprocess.check_call(args = ("unar", "-D", infile, "-o", tmpdir))
     modelsdir = os.path.join(tmpdir, "models")
