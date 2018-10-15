@@ -331,7 +331,34 @@ importers = \
             },
     }
 
+#+
+# File manipulations
+#-
+
 getext = lambda item : os.path.splitext(item)[1].lower()
+is_archive_ext = \
+  (
+    lambda item :
+            getext(item)
+        in
+            (
+                ".zip", ".7z", ".rar", ".tar", ".tar.gz", ".tar.bz2", ".tar.xz",
+                ".tgz", ".tbz2", ".xz",
+            )
+  )
+
+def extract_archive(infile, outdir) :
+    subprocess.check_call(args = ("unar", "-D", infile, "-o", outdir))
+    for item in os.listdir(outdir) :
+        item = os.path.join(outdir, item)
+        if is_archive_ext(item) and os.path.isfile(item) :
+            subdir = os.path.join(outdir, os.path.splitext(item)[0])
+            os.mkdir(subdir)
+            extract_archive(item, subdir)
+            os.unlink(item)
+        #end if
+    #end for
+#end extract_archive
 
 #+
 # Mainline
@@ -394,10 +421,9 @@ if existing_action != "overwrite" and os.path.exists(outfile) :
 
 tmpdir = None
 
-infilext = getext(infile)
-if infilext in (".zip", ".7z", ".rar", ".tar", ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".tbz2", ".xz") :
+if is_archive_ext(infile) :
     tmpdir = tempfile.mkdtemp(prefix = "blender_import")
-    subprocess.check_call(args = ("unar", "-D", infile, "-o", tmpdir))
+    extract_archive(infile, tmpdir)
     modelsdir = os.path.join(tmpdir, "models")
     if not os.path.isdir(modelsdir) :
         modelsdir = tmpdir
