@@ -204,8 +204,8 @@ def limit_enum(vals) :
 # Dictionary key is filename extension
 # Value is dictionary with entries
 #    name -- descriptive name
-#    op   -- Blender operator to perform import
-#    args -- additional optional args to import operator, list of (name, type) tuples.
+#    op   -- Blender function to perform import
+#    args -- additional optional args to import function, list of (name, type) tuples.
 #-
 
 importers = \
