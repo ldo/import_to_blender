@@ -133,6 +133,10 @@ except ChildProcessError :
     pass
 #end try
 
+#+
+# Importer arg validation/conversion
+#-
+
 def valid_axis(arg) :
     if arg not in {"X", "Y", "Z", "-X", "-Y", "-Z"} :
         raise TypeError("not a valid axis: %s" % repr(arg))
@@ -192,6 +196,16 @@ def limit_enum(vals) :
     return \
         validate
 #end limit_enum
+
+#+
+# Importer definitions
+#
+# Dictionary key is filename extension
+# Value is dictionary with entries
+#    name -- descriptive name
+#    op   -- Blender operator to perform import
+#    args -- additional optional args to import operator, list of (name, type) tuples.
+#-
 
 importers = \
     {
