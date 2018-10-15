@@ -452,6 +452,7 @@ if is_archive_ext(infile) :
         raise RuntimeError("no importable file found in in %s" % repr(infile))
     #end if
 else :
+    infilext = getext(infile)
     if infilext in importers :
         importer = importers[infilext]
         use_infile = infile
