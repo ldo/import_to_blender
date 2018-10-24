@@ -287,6 +287,18 @@ importers = \
                         ("use_prepost_rot", bool),
                     ],
             },
+        ".lwo" :
+            {
+                "name" : "LightWave Objects",
+                "op" : (bpy.ops.import_scene, "lwo", "io_import_scene_lwo"),
+                "args" :
+                    [
+                        ("ADD_SUBD_MOD", bool),
+                        ("LOAD_HIDDEN", bool),
+                        ("SKEL_TO_ARM", bool),
+                        ("USE_EXISTING_MATERIALS", bool),
+                    ],
+            },
         ".obj" :
             {
                 "name" : "OBJ",
@@ -540,8 +552,14 @@ if existing_action != "merge" :
 if preexec != "" :
     exec(preexec)
 #end if
+importer_op = importer["op"]
+if isinstance(importer_op, tuple) :
+    sys.stderr.write("enable importer module %s for operator %s\n" % (importer_op[2], importer_op[1]))
+    bpy.ops.wm.addon_enable(module = importer_op[2])
+    importer_op = getattr(importer_op[0], importer_op[1])
+#end if
 for infile in importable :
-    importer["op"](filepath = infile, **importer_args)
+    importer_op(filepath = infile, **importer_args)
 #end for
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
