@@ -290,7 +290,7 @@ importers = \
         ".lwo" :
             {
                 "name" : "LightWave Objects",
-                "op" : (bpy.ops.import_scene, "lwo", "io_import_scene_lwo"),
+                "op" : (bpy.ops.import_scene, ("lwo",), "io_import_scene_lwo"),
                 "args" :
                     [
                         ("ADD_SUBD_MOD", bool),
@@ -350,6 +350,26 @@ importers = \
                     [
                         ("axis_forward", valid_axis),
                         ("axis_up", valid_axis),
+                    ],
+            },
+        ".xps" :
+            {
+                "name" : "XNALara Objects",
+                "op" : (bpy.ops, ("xps_tools", "import_model"), "XNALaraMesh"),
+                  # get importer addon from <https://github.com/johnzero7/XNALaraMesh/>
+                "args" :
+                    [
+                        ("uvDisplX", int),
+                        ("uvDisplY", int),
+                        ("impDefPose", bool),
+                        ("markSeams", bool),
+                        ("colorizeMesh", bool),
+                        ("vColors", bool),
+                        ("joinMeshRips", bool),
+                        ("joinMeshParts", bool),
+                        ("connectBones", bool),
+                        ("autoIk", bool),
+                        ("importNormals", bool),
                     ],
             },
     }
@@ -554,9 +574,13 @@ if preexec != "" :
 #end if
 importer_op = importer["op"]
 if isinstance(importer_op, tuple) :
-    sys.stderr.write("enable importer module %s for operator %s\n" % (importer_op[2], importer_op[1]))
+    sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
     bpy.ops.wm.addon_enable(module = importer_op[2])
-    importer_op = getattr(importer_op[0], importer_op[1])
+    mod = importer_op[0]
+    for name in importer_op[1] :
+         mod = getattr(mod, name)
+    #end for
+    importer_op = mod
 #end if
 for infile in importable :
     importer_op(filepath = infile, **importer_args)
