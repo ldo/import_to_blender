@@ -15,11 +15,17 @@
 #    --blender=«blender»
 #          specifies the path to the Blender executable. Defaults to
 #          searching for the name “blender” in your PATH.
-#    --existing=error|overwrite
+#    --existing=error|merge|overwrite
 #          specifies what to do if the output .blend file already exists:
 #            error       -- signal an error and abort the conversion (default)
 #            merge       -- merge the imported model into the existing file
 #            overwrite   -- overwrite the output .blend file
+#    --merge-multi
+#          specifies that, if multiple importable files are found in an
+#          archive, then they are all to be imported into a single .blend
+#          file. Otherwise, if multiple importable files are found, this is
+#          an error. In any case, the files must all have the same extension,
+#          so they can be handled by the same importer.
 #    --postexec=script
 #          executes the specified Python code after the import, just prior
 #          to saving the .blend file.
@@ -49,6 +55,7 @@ opterror()
 
 blender=blender
 existing=error
+merge_multi=0
 nr_args=0
 args=
 scale=
@@ -78,6 +85,8 @@ for ((;;)); do
             opterror "--existing value must be “error”, “merge” or “overwrite”"
         fi
         existing="$val"
+    elif [ "$opt" = "merge-multi" ]; then
+        merge_multi=1
     elif [ "$opt" = "postexec" ]; then
         if [ -n "$postexec" ]; then
             postexec="$postexec"$'\n'"$val"
@@ -110,6 +119,7 @@ fi
 export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
+export IMPORT_merge_multi="$merge_multi"
 if [ $nr_args -ne 0 ]; then
     unset IMPORT_arg_$((nr_args + 1)) # just in case
 fi
@@ -389,6 +399,7 @@ def extract_archive(infile, outdir) :
 infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
+merge_multi = os.getenv("IMPORT_merge_multi", "0")  != "0"
 scale_factor = os.getenv("IMPORT_scale", "")
 importer_args_strs = []
 i = 0
@@ -450,12 +461,24 @@ if is_archive_ext(infile) :
         use_infile = importable[0]
         importer = importers[getext(use_infile)]
     elif len(importable) > 1 :
-        raise RuntimeError \
-          (
-                "multiple importable files present in %s: %s"
-            %
-                (repr(infile), repr(importable))
-          )
+        if merge_multi :
+            importer = importers[getext(importable[0])]
+            if any(importers[getext(i)] != importer for i in importable[1:]) :
+                raise RuntimeError \
+                  (
+                        "multiple importable files with different extensions present in %s: %s"
+                    %
+                        (repr(infile), repr(importable))
+                  )
+            #end if
+        else :
+            raise RuntimeError \
+              (
+                    "multiple importable files present in %s: %s"
+                %
+                    (repr(infile), repr(importable))
+              )
+        #end if
     else :
         raise RuntimeError("no importable file found in in %s" % repr(infile))
     #end if
@@ -463,7 +486,7 @@ else :
     infilext = getext(infile)
     if infilext in importers :
         importer = importers[infilext]
-        use_infile = infile
+        importable = (infile,)
     else :
         raise getopt.GetoptError("input filename %s extension is not recognized" % infile)
     #end if
@@ -517,7 +540,9 @@ if existing_action != "merge" :
 if preexec != "" :
     exec(preexec)
 #end if
-importer["op"](filepath = use_infile, **importer_args)
+for infile in importable :
+    importer["op"](filepath = infile, **importer_args)
+#end for
 if scale_factor != None :
     bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
 #end if
