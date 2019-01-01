@@ -239,7 +239,7 @@ importers = \
         ".abc" :
             {
                 "name" : "Alembic",
-                 "op" : bpy.ops.wm.alembic_import,
+                "op" : bpy.ops.wm.alembic_import,
                 "args" :
                     [
                         ("scale", limit_float(0.0001, 1000)),
