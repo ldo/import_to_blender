@@ -490,7 +490,7 @@ if existing_action == "error" and os.path.exists(outfile) :
 tmpdir = None
 
 if is_archive_ext(infile) :
-    tmpdir = tempfile.mkdtemp(prefix = "blender_import")
+    tmpdir = tempfile.mkdtemp(prefix = "blender_import_")
     importable = extract_archive(infile, tmpdir)
     if len(importable) == 1 :
         use_infile = importable[0]
