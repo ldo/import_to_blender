@@ -40,10 +40,15 @@
 #          model.
 #    --template=«template-name»
 #          specifies the startup template to load before doing the import.
+#    --test
+#          indicates just to test the input file for importability,
+#          without doing the actual import. Returns a status of 0 if it
+#          looks importable, 1 if not, or 2 if multiple importable files
+#          were found but --merge-multi was not specified.
 #
 # External program needed: unar.
 #
-# Copyright 2018 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2018-2019 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under CC-BY-SA <http://creativecommons.org/licenses/by-sa/4.0/>.
 #-
 
@@ -56,6 +61,7 @@ opterror()
 blender=blender
 existing=error
 merge_multi=0
+just_test=0
 nr_args=0
 args=
 scale=
@@ -103,6 +109,8 @@ for ((;;)); do
         scale="$val"
     elif [ "$opt" = "template" ]; then
         template="$val"
+    elif [ "$opt" = "test" ]; then
+        just_test=1
     else
         opterror "bad option $opt"
     fi
@@ -110,7 +118,7 @@ done
 if [ -z "$(type -p "$blender")" ]; then
     opterror "no such executable “$blender”"
 fi
-if [ $# != 2 ]; then
+if [ $just_test = 0 -a $# != 2 ]; then
     opterror $'Usage:\n\t'"$0 "'«input_to_blender» «output_blend_file»'
 fi
 
@@ -120,6 +128,7 @@ export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
 export IMPORT_merge_multi="$merge_multi"
+export IMPORT_just_test="$just_test"
 if [ $nr_args -ne 0 ]; then
     unset IMPORT_arg_$((nr_args + 1)) # just in case
 fi
@@ -435,6 +444,7 @@ infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 merge_multi = os.getenv("IMPORT_merge_multi", "0")  != "0"
+just_test = os.getenv("IMPORT_just_test", "0")  != "0"
 scale_factor = os.getenv("IMPORT_scale", "")
 importer_args_strs = []
 i = 0
@@ -478,17 +488,23 @@ if template != "" :
           )
     #end if
 #end if
-if os.path.isdir(outfile) :
-    outfile = os.path.join(outfile, os.path.splitext(os.path.split(infile)[1])[0] + ".blend")
-elif not outfile.endswith(".blend") :
-    raise getopt.GetoptError("output file name must end with .blend")
-#end if
-if existing_action == "error" and os.path.exists(outfile) :
-    raise getopt.GetoptError("output %s already exists" % repr(outfile))
+
+if not just_test :
+    if os.path.isdir(outfile) :
+        outfile = os.path.join(outfile, os.path.splitext(os.path.split(infile)[1])[0] + ".blend")
+    elif not outfile.endswith(".blend") :
+        raise getopt.GetoptError("output file name must end with .blend")
+    #end if
+    if existing_action == "error" and os.path.exists(outfile) :
+        raise getopt.GetoptError("output %s already exists" % repr(outfile))
+    #end if
 #end if
 
 tmpdir = None
 
+if just_test :
+    is_importable_status = 0 # to begin with
+#end if
 if is_archive_ext(infile) :
     tmpdir = tempfile.mkdtemp(prefix = "blender_import_")
     importable = extract_archive(infile, tmpdir)
@@ -507,15 +523,23 @@ if is_archive_ext(infile) :
                   )
             #end if
         else :
-            raise RuntimeError \
-              (
-                    "multiple importable files present in %s: %s"
-                %
-                    (repr(infile), repr(importable))
-              )
+            if just_test :
+                is_importable_status = 2
+            else :
+                raise RuntimeError \
+                  (
+                        "multiple importable files present in %s: %s"
+                    %
+                        (repr(infile), repr(importable))
+                  )
+            #end if
         #end if
     else :
-        raise RuntimeError("no importable file found in in %s" % repr(infile))
+        if just_test :
+            is_importable_status = 1
+        else :
+            raise RuntimeError("no importable file found in in %s" % repr(infile))
+        #end if
     #end if
 else :
     infilext = getext(infile)
@@ -523,8 +547,16 @@ else :
         importer = importers[infilext]
         importable = (infile,)
     else :
-        raise getopt.GetoptError("input filename %s extension is not recognized" % infile)
+        if just_test :
+            is_importable_status = 1
+        else :
+            raise getopt.GetoptError("input filename %s extension is not recognized" % infile)
+        #end if
     #end if
+#end if
+
+if just_test :
+    sys.exit(is_importable_status)
 #end if
 
 importer_arg_defs = dict((item[0], item[1]) for item in importer["args"])
