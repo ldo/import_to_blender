@@ -555,87 +555,90 @@ else :
     #end if
 #end if
 
-if just_test :
-    sys.exit(is_importable_status)
+if not just_test :
+    importer_arg_defs = dict((item[0], item[1]) for item in importer["args"])
+    importer_args = {}
+    for arg in importer_args_strs :
+        value = arg.split("=", 1)
+        if len(value) != 2 :
+            raise getopt.GetoptError("bad import arg %s" % repr(arg))
+        #end if
+        keyword, value = value
+        if keyword not in importer_arg_defs :
+            raise getopt.GetoptError \
+              (
+                    "unrecognized arg keyword %s for %s importer"
+                %
+                    (repr(keyword), importer["name"])
+              )
+        #end if
+        if keyword in importer_args :
+            raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
+        #end if
+        conv = importer_arg_defs[keyword]
+        fail = None
+        try :
+            importer_args[keyword] = conv(value)
+        except (TypeError, ValueError) as why :
+            fail = getopt.GetoptError \
+              (
+                "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
+              )
+        #end try
+        if fail != None :
+            raise fail
+        #end if
+    #end for
+
+    if existing_action == "merge" and os.path.exists(outfile) :
+        bpy.ops.wm.open_mainfile(filepath = outfile)
+    else :
+        bpy.ops.wm.read_homefile(app_template = template)
+    #end if
+    objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
+    if existing_action != "merge" :
+        for obj in objs :
+            bpy.data.objects.remove(obj)
+        #end for
+    #end for
+    if preexec != "" :
+        exec(preexec)
+    #end if
+    importer_op = importer["op"]
+    if isinstance(importer_op, tuple) :
+        sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
+        bpy.ops.wm.addon_enable(module = importer_op[2])
+        mod = importer_op[0]
+        for name in importer_op[1] :
+             mod = getattr(mod, name)
+        #end for
+        importer_op = mod
+    #end if
+    for infile in importable :
+        importer_op(filepath = infile, **importer_args)
+    #end for
+    if scale_factor != None :
+        bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
+    #end if
+    for image in bpy.data.images :
+        try :
+            image.pack()
+        except RuntimeError as fail :
+            sys.stderr.write("%s\n" % str(fail))
+        #end try
+    #end for
+    if postexec != "" :
+        exec(postexec)
+    #end if
+    bpy.ops.wm.save_as_mainfile(filepath = outfile)
 #end if
 
-importer_arg_defs = dict((item[0], item[1]) for item in importer["args"])
-importer_args = {}
-for arg in importer_args_strs :
-    value = arg.split("=", 1)
-    if len(value) != 2 :
-        raise getopt.GetoptError("bad import arg %s" % repr(arg))
-    #end if
-    keyword, value = value
-    if keyword not in importer_arg_defs :
-        raise getopt.GetoptError \
-          (
-                "unrecognized arg keyword %s for %s importer"
-            %
-                (repr(keyword), importer["name"])
-          )
-    #end if
-    if keyword in importer_args :
-        raise getopt.GetoptError("duplicate arg keyword %s" % repr(keyword))
-    #end if
-    conv = importer_arg_defs[keyword]
-    fail = None
-    try :
-        importer_args[keyword] = conv(value)
-    except (TypeError, ValueError) as why :
-        fail = getopt.GetoptError \
-          (
-            "value for %s arg not of type %s -- %s" % (keyword, conv.__name__, str(why))
-          )
-    #end try
-    if fail != None :
-        raise fail
-    #end if
-#end for
-
-if existing_action == "merge" and os.path.exists(outfile) :
-    bpy.ops.wm.open_mainfile(filepath = outfile)
-else :
-    bpy.ops.wm.read_homefile(app_template = template)
-#end if
-objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
-if existing_action != "merge" :
-    for obj in objs :
-        bpy.data.objects.remove(obj)
-    #end for
-#end for
-if preexec != "" :
-    exec(preexec)
-#end if
-importer_op = importer["op"]
-if isinstance(importer_op, tuple) :
-    sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
-    bpy.ops.wm.addon_enable(module = importer_op[2])
-    mod = importer_op[0]
-    for name in importer_op[1] :
-         mod = getattr(mod, name)
-    #end for
-    importer_op = mod
-#end if
-for infile in importable :
-    importer_op(filepath = infile, **importer_args)
-#end for
-if scale_factor != None :
-    bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
-#end if
-for image in bpy.data.images :
-    try :
-        image.pack()
-    except RuntimeError as fail :
-        sys.stderr.write("%s\n" % str(fail))
-    #end try
-#end for
-if postexec != "" :
-    exec(postexec)
-#end if
-bpy.ops.wm.save_as_mainfile(filepath = outfile)
 if tmpdir != None :
     shutil.rmtree(tmpdir)
+#end if
+
+if just_test :
+    sys.exit(is_importable_status)
 #end if
 
 EOD
