@@ -26,6 +26,8 @@
 #          file. Otherwise, if multiple importable files are found, this is
 #          an error. In any case, the files must all have the same extension,
 #          so they can be handled by the same importer.
+#    --quiet
+#          Reduce messages displayed.
 #    --postexec=script
 #          executes the specified Python code after the import, just prior
 #          to saving the .blend file.
@@ -64,6 +66,7 @@ merge_multi=0
 just_test=0
 nr_args=0
 args=
+quiet=0
 scale=
 template=
 postexec=
@@ -93,6 +96,8 @@ for ((;;)); do
         existing="$val"
     elif [ "$opt" = "merge-multi" ]; then
         merge_multi=1
+    elif [ "$opt" = "quiet" ]; then
+        quiet=1
     elif [ "$opt" = "postexec" ]; then
         if [ -n "$postexec" ]; then
             postexec="$postexec"$'\n'"$val"
@@ -128,6 +133,7 @@ export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
 export IMPORT_merge_multi="$merge_multi"
+export IMPORT_quiet="$quiet"
 export IMPORT_just_test="$just_test"
 if [ $nr_args -ne 0 ]; then
     unset IMPORT_arg_$((nr_args + 1)) # just in case
@@ -426,7 +432,12 @@ def extract_archive(infile, outdir) :
         #end scan_dir
 
     #begin do_extract
-        subprocess.check_call(args = ("unar", "-D", infile, "-o", outdir))
+        if quiet :
+            extra_opts = ("-q",)
+        else :
+            extra_opts = ()
+        #end if
+        subprocess.check_call(args = ("unar",) + extra_opts + ("-D", infile, "-o", outdir))
         scan_dir(outdir)
     #end do_extract
 
@@ -444,6 +455,7 @@ infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 merge_multi = os.getenv("IMPORT_merge_multi", "0")  != "0"
+quiet = os.getenv("IMPORT_quiet", "0")  != "0"
 just_test = os.getenv("IMPORT_just_test", "0")  != "0"
 scale_factor = os.getenv("IMPORT_scale", "")
 importer_args_strs = []
