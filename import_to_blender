@@ -143,7 +143,7 @@ export IMPORT_template="$template"
 export IMPORT_postexec="$postexec"
 export IMPORT_preexec="$preexec"
 
-exec "$blender" -noaudio -b -P <(cat <<'EOD'
+exec "$blender" -noaudio 5>&1 1>/dev/null -b -P <(cat <<'EOD'
 import sys
 import os
 import subprocess
@@ -158,6 +158,10 @@ except ChildProcessError :
     # can happen intermittently?
     pass
 #end try
+
+out = os.fdopen(5, "w")
+  # use a different fd from stdout, only way it seems to avoid
+  # output being polluted by Blender’s messages
 
 #+
 # Importer arg validation/conversion
@@ -437,7 +441,11 @@ def extract_archive(infile, outdir) :
         else :
             extra_opts = ()
         #end if
-        subprocess.check_call(args = ("unar",) + extra_opts + ("-D", infile, "-o", outdir))
+        subprocess.check_call \
+          (
+            args = ("unar",) + extra_opts + ("-D", infile, "-o", outdir),
+            stdout = out
+          )
         scan_dir(outdir)
     #end do_extract
 
@@ -467,6 +475,9 @@ while True :
         break
     importer_args_strs.append(arg)
 #end while
+#if not quiet :
+#    os.dup2(out.fileno(), 1)
+##end if
 
 postexec = os.getenv("IMPORT_postexec", "")
 preexec = os.getenv("IMPORT_preexec", "")
