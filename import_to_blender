@@ -476,7 +476,7 @@ while True :
     importer_args_strs.append(arg)
 #end while
 #if not quiet :
-#    os.dup2(out.fileno(), 1)
+#    os.dup2(out.fileno(), 1) # this would allow Blender’s messages to reappear
 ##end if
 
 postexec = os.getenv("IMPORT_postexec", "")
