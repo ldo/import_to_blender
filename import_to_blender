@@ -395,6 +395,7 @@ importers = \
                     ],
             },
     }
+importers[".mesh"] = importers[".xps"]
 
 #+
 # File manipulations
