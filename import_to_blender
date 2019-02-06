@@ -468,14 +468,15 @@ def fix_path_case(path) :
         if not os.path.exists(os.path.join(parent, child_immed)) :
             candidates = list(c for c in os.listdir(parent) if c.lower() == child_immed.lower())
             if len(candidates) != 1 :
-                raise RuntimeError \
+                sys.stderr.write \
                   (
-                        "no unique case-insensitive candidate for %s: %s"
+                        "fix_path_case: no unique case-insensitive candidate for %s: %s\n"
                     %
                         (repr(os.path.join(parent, child_immed)), repr(candidates))
                   )
+            else :
+                child_immed = candidates[0]
             #end if
-            child_immed = candidates[0]
         #end if
         path = os.path.join(parent, child_immed)
         if rest != None :
