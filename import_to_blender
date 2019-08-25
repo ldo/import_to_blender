@@ -245,7 +245,7 @@ importers = \
         ".3ds" :
             {
                 "name" : "3DS",
-                "op" : bpy.ops.import_scene.autodesk_3ds,
+                "op" : (bpy.ops, ("import_scene", "autodesk_3ds"), "io_scene_3ds"),
                 "args" :
                     [
                         ("axis_forward", valid_axis),
@@ -487,9 +487,14 @@ def fix_path_case(path) :
     #end fix_path_component_case
 
 #begin fix_path_case
-    assert path.startswith("/")
+    if path != "" :
+        assert path.startswith("/")
+        result = fix_path_component_case("/", path[1:])
+    else :
+        result = ""
+    #end if
     return \
-        fix_path_component_case("/", path[1:])
+        result
 #end fix_path_case
 
 #+
@@ -667,7 +672,7 @@ if not just_test :
     importer_op = importer["op"]
     if isinstance(importer_op, tuple) :
         sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
-        bpy.ops.wm.addon_enable(module = importer_op[2])
+        bpy.ops.preferences.addon_enable(module = importer_op[2])
         mod = importer_op[0]
         for name in importer_op[1] :
              mod = getattr(mod, name)
