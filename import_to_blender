@@ -506,6 +506,9 @@ def fix_path_case(path) :
 #begin fix_path_case
     if path != "" :
         assert path.startswith("/")
+        if path.startswith("//") :
+            path = os.path.normpath(os.path.join(os.path.dirname(outfile), path[2:]))
+        #end if
         result = fix_path_component_case("/", path[1:])
     else :
         result = ""
@@ -579,6 +582,7 @@ if not just_test :
     elif not outfile.endswith(".blend") :
         raise getopt.GetoptError("output file name must end with .blend")
     #end if
+    outfile = os.path.abspath(outfile)
     if existing_action == "error" and os.path.exists(outfile) :
         raise getopt.GetoptError("output %s already exists" % repr(outfile))
     #end if
