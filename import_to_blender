@@ -15,6 +15,11 @@
 #    --blender=«blender»
 #          specifies the path to the Blender executable. Defaults to
 #          searching for the name “blender” in your PATH.
+#    --consider-all
+#          consider all available importers, whether enabled as standard
+#          or not. Otherwise, preference is given to standard importers,
+#          with ones needing explicit enabling only considered if none
+#          of the standard ones can handle the file.
 #    --existing=error|merge|overwrite
 #          specifies what to do if the output .blend file already exists:
 #            error       -- signal an error and abort the conversion (default)
@@ -50,7 +55,7 @@
 #
 # External program needed: unar.
 #
-# Copyright 2018-2019 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2018-2020 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under CC-BY-SA <http://creativecommons.org/licenses/by-sa/4.0/>.
 #-
 
@@ -63,6 +68,7 @@ opterror()
 blender=blender
 existing=error
 merge_multi=0
+consider_all=0
 just_test=0
 nr_args=0
 args=
@@ -89,6 +95,8 @@ for ((;;)); do
         export IMPORT_arg_${nr_args}="$val"
     elif [ "$opt" = "blender" ]; then
         blender="$val"
+    elif [ "$opt" = "consider-all" ]; then
+        consider_all=1
     elif [ "$opt" = "existing" ]; then
         if [ "$val" != "error" -a "$val" != "merge" -a "$val" != "overwrite" ]; then
             opterror "--existing value must be “error”, “merge” or “overwrite”"
@@ -132,6 +140,7 @@ fi
 export IMPORT_infile="$1"
 export IMPORT_outfile="$2"
 export IMPORT_existing="$existing"
+export IMPORT_consider_all="$consider_all"
 export IMPORT_merge_multi="$merge_multi"
 export IMPORT_quiet="$quiet"
 export IMPORT_just_test="$just_test"
@@ -415,6 +424,7 @@ is_archive_ext = \
 
 def extract_archive(infile, outdir) :
     importable = []
+    std_importable = []
 
     def do_extract(infile, outdir) :
 
@@ -428,7 +438,11 @@ def extract_archive(infile, outdir) :
                         do_extract(item, subdir)
                         os.unlink(item)
                     elif getext(item) in importers :
+                        importer = importers[getext(item)]
                         importable.append(item)
+                        if not isinstance(importer["op"], tuple) :
+                            std_importable.append(item)
+                        #end if
                     #end if
                 elif os.path.isdir(item) :
                     scan_dir(item)
@@ -452,6 +466,9 @@ def extract_archive(infile, outdir) :
 
 #begin extract_archive
     do_extract(infile, outdir)
+    if not consider_all and len(std_importable) != 0 :
+        importable = std_importable
+    #end if
     return \
         importable
 #end extract_archive
@@ -504,6 +521,8 @@ def fix_path_case(path) :
 infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
+consider_all = os.getenv("IMPORT_consider_all", "0")  != "0"
+out.write("consider_all = %s\n" % consider_all) # break
 merge_multi = os.getenv("IMPORT_merge_multi", "0")  != "0"
 quiet = os.getenv("IMPORT_quiet", "0")  != "0"
 just_test = os.getenv("IMPORT_just_test", "0")  != "0"
