@@ -715,7 +715,6 @@ if not just_test :
             import_count += 1
             import_collection = bpy.data.collections.new("Import %d" % import_count)
             scene.collection.children.link(import_collection)
-            out.write("new collection name = %s\n" % repr(import_collection.name)) # debug
             for obj in scene.objects :
                 if obj.select_get() :
                     import_collection.objects.link(obj)
