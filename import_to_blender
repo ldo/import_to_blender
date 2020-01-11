@@ -26,11 +26,13 @@
 #            merge       -- merge the imported model into the existing file
 #            overwrite   -- overwrite the output .blend file
 #    --merge-multi
-#          specifies that, if multiple importable files are found in an
-#          archive, then they are all to be imported into a single .blend
-#          file. Otherwise, if multiple importable files are found, this is
-#          an error. In any case, the files must all have the same extension,
-#          so they can be handled by the same importer.
+#          specifies that, if multiple importable files are found in
+#          an archive, then they are all to be imported into a single
+#          .blend file, with a separate collection created for each
+#          one. Otherwise, if multiple importable files are found,
+#          this is an error. In any case, the files must all have the
+#          same extension, so they can be handled by the same
+#          importer.
 #    --quiet
 #          Reduce messages displayed.
 #    --postexec=script
