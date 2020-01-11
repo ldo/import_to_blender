@@ -702,8 +702,32 @@ if not just_test :
         #end for
         importer_op = mod
     #end if
+    if merge_multi :
+        import_count = 0
+        scene = bpy.context.scene
+        previous_collections = list(scene.collection.children)
+    #end if
     for infile in importable :
         importer_op(filepath = infile, **importer_args)
+        if merge_multi :
+            import_count += 1
+            import_collection = bpy.data.collections.new("Import %d" % import_count)
+            scene.collection.children.link(import_collection)
+            out.write("new collection name = %s\n" % repr(import_collection.name)) # debug
+            for obj in scene.objects :
+                if obj.select_get() :
+                    import_collection.objects.link(obj)
+                    for coll in previous_collections :
+                        try :
+                            coll.objects.unlink(obj)
+                        except RuntimeError : # assume it wasn’t in that collection
+                            pass
+                        #end try
+                    #end for
+                #end if
+            #end for
+            bpy.ops.object.select_all(action = "DESELECT")
+        #end if
     #end for
     if scale_factor != None :
         bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
