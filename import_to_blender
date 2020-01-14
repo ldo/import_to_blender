@@ -527,7 +527,6 @@ infile = os.getenv("IMPORT_infile")
 outfile = os.getenv("IMPORT_outfile")
 existing_action = os.getenv("IMPORT_existing")
 consider_all = os.getenv("IMPORT_consider_all", "0")  != "0"
-out.write("consider_all = %s\n" % consider_all) # break
 merge_multi = os.getenv("IMPORT_merge_multi", "0")  != "0"
 quiet = os.getenv("IMPORT_quiet", "0")  != "0"
 just_test = os.getenv("IMPORT_just_test", "0")  != "0"
