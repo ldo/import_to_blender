@@ -507,10 +507,10 @@ def fix_path_case(path) :
 
 #begin fix_path_case
     if path != "" :
-        assert path.startswith("/")
-        if path.startswith("//") :
-            path = os.path.normpath(os.path.join(os.path.dirname(outfile), path[2:]))
-        #end if
+        path = os.path.normpath \
+          (
+            os.path.join(os.path.dirname(outfile), path[(0, 2)[path.startswith("//")]:])
+          )
         result = fix_path_component_case("/", path[1:])
     else :
         result = ""
