@@ -747,6 +747,13 @@ if not just_test :
             image.pack()
         except RuntimeError as fail :
             sys.stderr.write("error packing %s: %s\n" % (repr(image.filepath), str(fail)))
+        else :
+            # wipe all traces of original temporary file path
+            image.filepath = "//textures/%s" % os.path.split(image.filepath)[1]
+            image.filepath_raw = image.filepath
+            for item in image.packed_files :
+                item.filepath = image.filepath
+            #end for
         #end try
     #end for
     if postexec != "" :
