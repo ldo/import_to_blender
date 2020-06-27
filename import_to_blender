@@ -35,15 +35,24 @@
 #          importer.
 #    --quiet
 #          Reduce messages displayed.
-#    --postexec=script
+#    --postexec=«script»
 #          executes the specified Python code after the import, just prior
 #          to saving the .blend file.
 #          May be specified multiple times; the values are concatenated
-#          in sequence, separated by newlines.
-#    --preexec=script
+#          in sequence, separated by newlines. May not be specified
+#          together with --postexecfile.
+#    --postexecfile=«scriptfilename»
+#          executes the contents of the specified text file as Python code
+#          after the import, just prior to saving the .blend file.
+#          May not be specified together with --postexec.
+#    --preexec=«script»
 #          executes the specified Python code prior to the import.
 #          May be specified multiple times; the values are concatenated
-#          in sequence, separated by newlines.
+#          in sequence, separated by newlines. May not be specified
+#          together with --preexecfile.
+#    --preexecfile=«scriptfilename»
+#          executes the contents of the specified text file as Python code
+#          prior to the import. May not be specified together with --preexec.
 #    --scale=«scalefactor»
 #          specifies an optional factor by which to scale the imported
 #          model.
@@ -78,7 +87,9 @@ quiet=0
 scale=
 template=
 postexec=
+postexecfile=
 preexec=
+preexecfile=
 
 for ((;;)); do
     if [ "${1:0:2}" != "--" ]; then
@@ -114,12 +125,16 @@ for ((;;)); do
         else
             postexec="$val"
         fi
+    elif [ "$opt" = "postexecfile" ]; then
+        postexecfile="$val"
     elif [ "$opt" = "preexec" ]; then
         if [ -n "$preexec" ]; then
             preexec="$preexec"$'\n'"$val"
         else
             preexec="$val"
         fi
+    elif [ "$opt" = "preexecfile" ]; then
+        preexecfile="$val"
     elif [ "$opt" = "scale" ]; then
         scale="$val"
     elif [ "$opt" = "template" ]; then
@@ -152,7 +167,9 @@ fi
 export IMPORT_scale="$scale"
 export IMPORT_template="$template"
 export IMPORT_postexec="$postexec"
+export IMPORT_postexecfile="$postexecfile"
 export IMPORT_preexec="$preexec"
+export IMPORT_preexecfile="$preexecfile"
 
 exec "$blender" -noaudio 5>&1 1>/dev/null -b -P <(cat <<'EOD'
 import sys
@@ -545,7 +562,21 @@ while True :
 ##end if
 
 postexec = os.getenv("IMPORT_postexec", "")
+postexecfile = os.getenv("IMPORT_postexecfile", "")
+if postexecfile != "" :
+    if postexec != "" :
+        raise getopt.GetoptError("cannot specify both --postexec and --postexecfile")
+    #end if
+    postexec = open(postexecfile, "rt").read()
+#end if
 preexec = os.getenv("IMPORT_preexec", "")
+preexecfile = os.getenv("IMPORT_preexecfile", "")
+if preexecfile != "" :
+    if preexec != "" :
+        raise getopt.GetoptError("cannot specify both --preexec and --preexecfile")
+    #end if
+    preexec = open(preexecfile, "rt").read()
+#end if
 if scale_factor != "" :
     try :
         scale_factor = float(scale_factor)
