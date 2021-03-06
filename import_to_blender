@@ -787,28 +787,32 @@ if not just_test :
         bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
     #end if
     for image in bpy.data.images :
-        filepath = fix_path_case(image.filepath)
-        if filepath != image.filepath :
-            sys.stderr.write \
-              (
-                "fix path case: %s => %s\n" % (repr(image.filepath), repr(filepath))
-              )
-            image.filepath = filepath
+        if image.packed_file == None :
+            filepath = fix_path_case(image.filepath)
+            if filepath != image.filepath :
+                sys.stderr.write \
+                  (
+                    "fix path case: %s => %s\n" % (repr(image.filepath), repr(filepath))
+                  )
+                image.filepath = filepath
+            #end if
         #end if
     #end for
     for image in bpy.data.images :
-        try :
-            image.pack()
-        except RuntimeError as fail :
-            sys.stderr.write("error packing %s: %s\n" % (repr(image.filepath), str(fail)))
-        else :
-            # wipe all traces of original temporary file path
-            image.filepath = "//textures/%s" % os.path.split(image.filepath)[1]
-            image.filepath_raw = image.filepath
-            for item in image.packed_files :
-                item.filepath = image.filepath
-            #end for
-        #end try
+        if image.packed_file == None :
+            try :
+                image.pack()
+            except RuntimeError as fail :
+                sys.stderr.write("error packing %s: %s\n" % (repr(image.filepath), str(fail)))
+            else :
+                # wipe all traces of original temporary file path
+                image.filepath = "//textures/%s" % os.path.split(image.filepath)[1]
+                image.filepath_raw = image.filepath
+                for item in image.packed_files :
+                    item.filepath = image.filepath
+                #end for
+            #end try
+        #end if
     #end for
     if postexec != "" :
         exec(postexec)
