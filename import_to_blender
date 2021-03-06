@@ -292,6 +292,12 @@ def limit_enum(vals) :
 
 importers = \
     {
+        ".blend" :
+            {
+                "name" : "Blender Native",
+                "op" : None, # special case
+                "args" : [],
+            },
         ".3ds" :
             {
                 "name" : "3DS",
@@ -733,58 +739,63 @@ if not just_test :
         #end if
     #end for
 
-    if existing_action == "merge" and os.path.exists(outfile) :
-        bpy.ops.wm.open_mainfile(filepath = outfile)
-    else :
-        bpy.ops.wm.read_homefile(app_template = template)
-    #end if
-    objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
-    if existing_action != "merge" :
-        for obj in objs :
-            bpy.data.objects.remove(obj)
-        #end for
-    #end for
-    if preexec != "" :
-        exec(preexec)
-    #end if
     importer_op = importer["op"]
-    if isinstance(importer_op, tuple) :
-        sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
-        bpy.ops.preferences.addon_enable(module = importer_op[2])
-        mod = importer_op[0]
-        for name in importer_op[1] :
-             mod = getattr(mod, name)
-        #end for
-        importer_op = mod
-    #end if
-    if merge_multi :
-        import_count = 0
-        scene = bpy.context.scene
-        previous_collections = list(scene.collection.children)
-    #end if
-    for infile in importable :
-        importer_op(filepath = infile, **importer_args)
-        if merge_multi :
-            import_count += 1
-            import_collection = bpy.data.collections.new("Import %d" % import_count)
-            scene.collection.children.link(import_collection)
-            for obj in scene.objects :
-                if obj.select_get() :
-                    import_collection.objects.link(obj)
-                    for coll in previous_collections :
-                        try :
-                            coll.objects.unlink(obj)
-                        except RuntimeError : # assume it wasn’t in that collection
-                            pass
-                        #end try
-                    #end for
-                #end if
-            #end for
-            bpy.ops.object.select_all(action = "DESELECT")
+    if importer_op != None :
+        if existing_action == "merge" and os.path.exists(outfile) :
+            bpy.ops.wm.open_mainfile(filepath = outfile)
+        else :
+            bpy.ops.wm.read_homefile(app_template = template)
         #end if
-    #end for
-    if scale_factor != None :
-        bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
+        objs = list(obj for obj in bpy.data.objects if obj.type != "CAMERA")
+        if existing_action != "merge" :
+            for obj in objs :
+                bpy.data.objects.remove(obj)
+            #end for
+        #end for
+        if preexec != "" :
+            exec(preexec)
+        #end if
+        if isinstance(importer_op, tuple) :
+            sys.stderr.write("enable importer module %s for operator : %s\n" % (importer_op[2], repr(importer_op[1])))
+            bpy.ops.preferences.addon_enable(module = importer_op[2])
+            mod = importer_op[0]
+            for name in importer_op[1] :
+                 mod = getattr(mod, name)
+            #end for
+            importer_op = mod
+        #end if
+        if merge_multi :
+            import_count = 0
+            scene = bpy.context.scene
+            previous_collections = list(scene.collection.children)
+        #end if
+        for infile in importable :
+            importer_op(filepath = infile, **importer_args)
+            if merge_multi :
+                import_count += 1
+                import_collection = bpy.data.collections.new("Import %d" % import_count)
+                scene.collection.children.link(import_collection)
+                for obj in scene.objects :
+                    if obj.select_get() :
+                        import_collection.objects.link(obj)
+                        for coll in previous_collections :
+                            try :
+                                coll.objects.unlink(obj)
+                            except RuntimeError : # assume it wasn’t in that collection
+                                pass
+                            #end try
+                        #end for
+                    #end if
+                #end for
+                bpy.ops.object.select_all(action = "DESELECT")
+            #end if
+        #end for
+        if scale_factor != None :
+            bpy.ops.transform.resize(value = (scale_factor, scale_factor, scale_factor))
+        #end if
+    else :
+        assert len(importable) == 1, "can only load one .blend file"
+        bpy.ops.wm.open_mainfile(filepath = importable[0])
     #end if
     for image in bpy.data.images :
         if image.packed_file == None :
