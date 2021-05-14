@@ -1,68 +1,10 @@
 #!/bin/bash
 #+
 # This script invokes Blender to import a 3D model in a supported
-# format into a new .blend file. Invoke it as follows:
+# format into a new .blend file.
 #
-#     import_to_blender [«options»...] «input_file» «output_blend_file»
-#
-# where «input_file» is the name of the file to import, and
-# «output_blend_file» is the name to give the output .blend file.
-#
-# Valid options are
-#    --arg=«keyword»=«value»
-#          specifies an additional keyword argument for the import operator.
-#          May be specified multiple times with different keywords.
-#    --blender=«blender»
-#          specifies the path to the Blender executable. Defaults to
-#          searching for the name “blender” in your PATH.
-#    --consider-all
-#          consider all available importers, whether enabled as standard
-#          or not. Otherwise, preference is given to standard importers,
-#          with ones needing explicit enabling only considered if none
-#          of the standard ones can handle the file.
-#    --existing=error|merge|overwrite
-#          specifies what to do if the output .blend file already exists:
-#            error       -- signal an error and abort the conversion (default)
-#            merge       -- merge the imported model into the existing file
-#            overwrite   -- overwrite the output .blend file
-#    --merge-multi
-#          specifies that, if multiple importable files are found in
-#          an archive, then they are all to be imported into a single
-#          .blend file, with a separate collection created for each
-#          one. Otherwise, if multiple importable files are found,
-#          this is an error. In any case, the files must all have the
-#          same extension, so they can be handled by the same
-#          importer.
-#    --quiet
-#          Reduce messages displayed.
-#    --postexec=«script»
-#          executes the specified Python code after the import, just prior
-#          to saving the .blend file.
-#          May be specified multiple times; the values are concatenated
-#          in sequence, separated by newlines. May not be specified
-#          together with --postexecfile.
-#    --postexecfile=«scriptfilename»
-#          executes the contents of the specified text file as Python code
-#          after the import, just prior to saving the .blend file.
-#          May not be specified together with --postexec.
-#    --preexec=«script»
-#          executes the specified Python code prior to the import.
-#          May be specified multiple times; the values are concatenated
-#          in sequence, separated by newlines. May not be specified
-#          together with --preexecfile.
-#    --preexecfile=«scriptfilename»
-#          executes the contents of the specified text file as Python code
-#          prior to the import. May not be specified together with --preexec.
-#    --scale=«scalefactor»
-#          specifies an optional factor by which to scale the imported
-#          model.
-#    --template=«template-name»
-#          specifies the startup template to load before doing the import.
-#    --test
-#          indicates just to test the input file for importability,
-#          without doing the actual import. Returns a status of 0 if it
-#          looks importable, 1 if not, or 2 if multiple importable files
-#          were found but --merge-multi was not specified.
+# Invocation details are documented in the import_to_blender(1) man page,
+# included with this script.
 #
 # External program needed: unar.
 #
