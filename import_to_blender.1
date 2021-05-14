@@ -1,0 +1,177 @@
+.TH "IMPORT_TO_BLENDER" "1" "2021-05-14" "Geek Central" "Batch-Mode Blender Scripts"
+
+.SH NAME
+import_to_blender -- invoke
+.UR https://blender.org/
+Blender
+.UE
+importer addons in batch mode, with automatic expansion of archive files
+
+.SH SYNOPSIS
+.BR import_to_blender " [" «options» "...]"
+.B «input_file» «output_blend_file»
+
+.SH DESCRIPTION
+.B import_to_blender
+is a command-line tool which, given an input file, will launch Blender
+in batch mode and invoke one of its available importer addons to convert
+the file to
+.B .blend
+format. The extension on
+.B «input_file»
+will be used to find a recognized importer, or it can be one of
+the common archive formats, in which case it will be extracted
+to a temporary directory and its contents used to find an importer.
+
+Any external image textures that are referenced (for example,
+included in the archive file) will be packed into the
+.B .blend
+file, making it self-contained. Their associated file paths will
+be set to something reasonable, allowing them to be conveniently
+extracted if needed.
+
+.B «output_blend_file»
+can also be a directory name, in which case the output
+.B .blend
+file will be created within it, with the same base name as
+.BR «input_file» .
+
+.SH OPTIONS
+.TP
+.B --arg=«keyword»=«value»
+specifies an additional keyword argument for the import operator.
+May be specified multiple times with different keywords.
+
+.TP
+.B --blender=«blender»
+specifies the path to the Blender executable. Defaults to
+searching for the name “blender” in your PATH.
+
+.TP
+.B --consider-all
+consider all available importers, whether enabled as standard
+or not. Otherwise, preference is given to standard importers,
+with ones needing explicit enabling only considered if none
+of the standard ones can handle the file.
+
+.TP
+.BR --existing=error | merge | overwrite
+specifies what to do if the output .blend file already exists:
+.RS
+.TP
+.B error
+-- signal an error and abort the conversion (default)
+
+.TP
+.B merge
+-- merge the imported model into the existing
+.B .blend
+file
+
+.TP
+.B overwrite
+-- overwrite the output
+.B .blend
+file
+.RE
+
+.TP
+.B --merge-multi
+specifies that, if multiple importable files are found in
+an archive, then they are all to be imported into a single
+.blend file, with a separate collection created for each
+one. Otherwise, if multiple importable files are found,
+this is an error. In any case, the files must all have the
+same extension, so they can be handled by the same
+importer.
+
+.TP
+.B --quiet
+Reduce messages displayed.
+
+.TP
+.B --postexec=«script»
+executes the specified Python code after the import, just prior
+to saving the
+.B .blend
+file. May be specified multiple times; the values are concatenated
+in sequence, separated by newlines. May not be specified
+together with
+.BR --postexecfile .
+
+.TP
+.B --postexecfile=«scriptfilename»
+executes the contents of the specified text file as Python code
+after the import, just prior to saving the .blend file.
+May not be specified together with
+.BR --postexec .
+
+.TP
+.B --preexec=«script»
+executes the specified Python code prior to the import.
+May be specified multiple times; the values are concatenated
+in sequence, separated by newlines. May not be specified
+together with
+.BR --preexecfile .
+
+.TP
+.B --preexecfile=«scriptfilename»
+executes the contents of the specified text file as Python code
+prior to the import. May not be specified together with
+.BR --preexec .
+
+.TP
+.B --scale=«scalefactor»
+specifies an optional factor by which to scale the imported
+model.
+
+.TP
+.B --template=«template-name»
+specifies the startup template to load before doing the import.
+
+.TP
+.B --test
+indicates just to test the input file for importability,
+without doing the actual import. Returns a status of 0 if it
+looks importable, 1 if not, or 2 if multiple importable files
+were found but
+.B --merge-multi
+was not specified.
+
+.SH BUGS
+
+Could do with better handling of the situation where more than one
+importable format is discovered in the input archive.
+
+.SH EXAMPLES
+
+.RS 4
+import_to_blender model.obj .
+.RE
+
+Imports
+.B model.obj
+as an OBJ-format model, creating the file
+.B model.blend
+in the current directory.
+
+.RS 4
+import_to_blender archive.zip converted.blend
+.RE
+
+Extracts
+.B archive.zip
+to a temporary directory, and invokes an appropriate importer
+on the contents, saving the result as the file
+.BR converted.blend .
+
+.SH EXTERNAL PROGRAMS NEEDED
+
+.B import_to_blender
+relies on
+.BR unar (1)
+to extract archive formats.
+
+.SH SEE ALSO
+
+.BR unar (1)
