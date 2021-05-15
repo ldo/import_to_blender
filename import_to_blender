@@ -307,7 +307,7 @@ importers = \
                         ("use_prepost_rot", bool),
                     ],
             },
-        ".lwo" :
+        ".lwo" : # Note: this has been deleted from blender-addons-contrib repo
             {
                 "name" : "LightWave Objects",
                 "op" : (bpy.ops.import_scene, ("lwo",), "io_import_scene_lwo"),
@@ -372,7 +372,7 @@ importers = \
                         ("axis_up", valid_axis),
                     ],
             },
-        ".xps" :
+        ".xps" : # also .mesh
             {
                 "name" : "XNALara Objects",
                 "op" : (bpy.ops, ("xps_tools", "import_model"), "XNALaraMesh"),
