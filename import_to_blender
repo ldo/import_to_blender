@@ -307,6 +307,19 @@ importers = \
                         ("use_prepost_rot", bool),
                     ],
             },
+        ".gltf" : # also .glb
+            {
+                "name" : "glTF",
+                "op" : bpy.ops.import_scene.gltf,
+                "args" :
+                    [
+                        ("bone_heuristic", limit_enum({"BLENDER", "TEMPERANCE", "FORTUNE"})),
+                        ("guess_original_bind_pose", bool),
+                        ("import_pack_images", bool),
+                        ("import_shading", limit_enum({"NORMALS", "FLAT", "SMOOTH"})),
+                        ("merge_vertices", bool),
+                    ],
+            },
         ".lwo" : # Note: this has been deleted from blender-addons-contrib repo
             {
                 "name" : "LightWave Objects",
@@ -393,6 +406,7 @@ importers = \
                     ],
             },
     }
+importers[".glb"] = importers[".gltf"]
 importers[".mesh"] = importers[".xps"]
 
 #+
