@@ -1,4 +1,4 @@
-.TH "IMPORT_TO_BLENDER" "1" "2021-05-14" "Geek Central" "Batch-Mode Blender Scripts"
+.TH "IMPORT_TO_BLENDER" "1" "2021-05-15" "Geek Central" "Batch-Mode Blender Scripts"
 
 .SH NAME
 import_to_blender -- invoke
@@ -137,6 +137,22 @@ looks importable, 1 if not, or 2 if multiple importable files
 were found but
 .B --merge-multi
 was not specified.
+
+.SH RECOGNIZED IMPORTERS
+
+.B import_to_blender
+recognizes the standard Blender importers for Alembic
+.RB ( .abc ),
+Collada
+.RB ( .dae ),
+FBX, PLY and X3D file formats. It will also import 3DS, LWO
+(LightWave objects) and XPS (“XNALara”) formats, provided it
+can find the requisite importer addons.
+
+.B import_to_blender
+can even handle an archive file that contains a native
+.B .blend
+file, extracting that and packing in its dependencies.
 
 .SH BUGS
 
