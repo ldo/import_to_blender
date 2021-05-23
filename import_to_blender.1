@@ -1,4 +1,4 @@
-.TH "IMPORT_TO_BLENDER" "1" "2021-05-15" "Geek Central" "Batch-Mode Blender Scripts"
+.TH "IMPORT_TO_BLENDER" "1" "2021-05-23" "Geek Central" "Batch-Mode Blender Scripts"
 
 .SH NAME
 import_to_blender -- invoke
@@ -8,8 +8,7 @@ Blender
 importer addons in batch mode, with automatic expansion of archive files
 
 .SH SYNOPSIS
-.BR import_to_blender " [" «options» "...]"
-.B «input_file» «output_blend_file»
+\fBimport_to_blender\fR [\fIoptions\fR ...] \fIinput_file\fR \fIoutput_blend_file\fR
 
 .SH DESCRIPTION
 .B import_to_blender
@@ -18,7 +17,7 @@ in batch mode and invoke one of its available importer addons to convert
 the file to
 .B .blend
 format. The extension on
-.B «input_file»
+.I input_file
 will be used to find a recognized importer, or it can be one of
 the common archive formats, in which case it will be extracted
 to a temporary directory and its contents used to find an importer.
@@ -30,22 +29,22 @@ file, making it self-contained. Their associated file paths will
 be set to something reasonable, allowing them to be conveniently
 extracted if needed.
 
-.B «output_blend_file»
+.I output_blend_file
 can also be a directory name, in which case the output
 .B .blend
 file will be created within it, with the same base name as
-.BR «input_file» .
+.IR input_file .
 
 .SH OPTIONS
 .TP
-.B --arg=«keyword»=«value»
+\fB--arg=\fIkeyword\fB=\fIvalue\fR
 specifies an additional keyword argument for the import operator.
 May be specified multiple times with different keywords.
 
 .TP
-.B --blender=«blender»
+\fB--blender=\fIblender\fR
 specifies the path to the Blender executable. Defaults to
-searching for the name “blender” in your PATH.
+searching for the name “blender” in your \fBPATH\fR.
 
 .TP
 .B --consider-all
@@ -55,7 +54,7 @@ with ones needing explicit enabling only considered if none
 of the standard ones can handle the file.
 
 .TP
-.BR --existing=error | merge | overwrite
+\fB--existing=error\fR|\fBmerge\fR|\fBoverwrite\fR
 specifies what to do if the output .blend file already exists:
 .RS
 .TP
@@ -79,7 +78,8 @@ file
 .B --merge-multi
 specifies that, if multiple importable files are found in
 an archive, then they are all to be imported into a single
-.blend file, with a separate collection created for each
+.B .blend
+file, with a separate collection created for each
 one. Otherwise, if multiple importable files are found,
 this is an error. In any case, the files must all have the
 same extension, so they can be handled by the same
@@ -90,7 +90,7 @@ importer.
 Reduce messages displayed.
 
 .TP
-.B --postexec=«script»
+\fB--postexec=\fIscript\fR
 executes the specified Python code after the import, just prior
 to saving the
 .B .blend
@@ -100,14 +100,14 @@ together with
 .BR --postexecfile .
 
 .TP
-.B --postexecfile=«scriptfilename»
+\fB--postexecfile=\fIscriptfilename\fR
 executes the contents of the specified text file as Python code
 after the import, just prior to saving the .blend file.
 May not be specified together with
 .BR --postexec .
 
 .TP
-.B --preexec=«script»
+\fB--preexec=\fIscript\fR
 executes the specified Python code prior to the import.
 May be specified multiple times; the values are concatenated
 in sequence, separated by newlines. May not be specified
@@ -115,18 +115,18 @@ together with
 .BR --preexecfile .
 
 .TP
-.B --preexecfile=«scriptfilename»
+\fB--preexecfile=\fIscriptfilename\fR
 executes the contents of the specified text file as Python code
 prior to the import. May not be specified together with
 .BR --preexec .
 
 .TP
-.B --scale=«scalefactor»
+\fB--scale=\fIscalefactor\fR
 specifies an optional factor by which to scale the imported
 model.
 
 .TP
-.B --template=«template-name»
+\fB--template=\fItemplate-name\fR
 specifies the startup template to load before doing the import.
 
 .TP
@@ -164,7 +164,7 @@ importable format is discovered in the input archive.
 .SH EXAMPLES
 
 .RS 4
-import_to_blender model.obj .
+\fBimport_to_blender model.obj .\fR
 .RE
 
 Imports
@@ -174,7 +174,7 @@ as an OBJ-format model, creating the file
 in the current directory.
 
 .RS 4
-import_to_blender archive.zip converted.blend
+\fBimport_to_blender archive.zip converted.blend\fR
 .RE
 
 Extracts
